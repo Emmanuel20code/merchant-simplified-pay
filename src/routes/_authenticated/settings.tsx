@@ -23,12 +23,12 @@ export const Route = createFileRoute("/_authenticated/settings")({
       {
         name: "description",
         content:
-          "Configure the till or paybill that receives your M-Pesa funds, plus passkey and callback URL.",
+          "Choose your account type and enter the till or paybill number that receives your M-Pesa funds.",
       },
       { property: "og:title", content: "Merchant settings — PayWave" },
       {
         property: "og:description",
-        content: "Point PayWave at your own M-Pesa till or paybill.",
+        content: "Point PayWave at your own M-Pesa till or paybill number.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -46,44 +46,29 @@ function SettingsPage() {
 
   const [shortcode, setShortcode] = useState("");
   const [accountType, setAccountType] = useState<"paybill" | "till">("paybill");
-  const [reference, setReference] = useState("");
-  const [callbackUrl, setCallbackUrl] = useState("");
-  const [passkey, setPasskey] = useState("");
 
   useEffect(() => {
     const data = settings.data;
     if (!data) return;
     setShortcode(data.shortcode ?? "");
     setAccountType((data.account_type as "paybill" | "till") ?? "paybill");
-    setReference(data.account_reference ?? "");
-    setCallbackUrl(data.callback_url ?? "");
   }, [settings.data]);
 
   const mutation = useMutation({
-    mutationFn: () =>
-      save({
-        data: {
-          shortcode,
-          account_type: accountType,
-          account_reference: reference,
-          callback_url: callbackUrl,
-          ...(passkey ? { passkey } : {}),
-        },
-      }),
+    mutationFn: () => save({ data: { shortcode, account_type: accountType } }),
     onSuccess: () => {
       toast.success("Settings saved");
-      setPasskey("");
       queryClient.invalidateQueries({ queryKey: ["merchant-settings"] });
     },
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Could not save"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not save"),
   });
 
   return (
     <div className="max-w-2xl rounded-2xl border border-border bg-card p-6">
       <h1 className="text-lg font-semibold text-foreground">Merchant settings</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Funds settle straight into your own till or paybill.
+        Funds settle straight into your own till or paybill. Everything else is handled for
+        you.
       </p>
 
       <form
@@ -93,65 +78,33 @@ function SettingsPage() {
           mutation.mutate();
         }}
       >
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="shortcode">Shortcode</Label>
-            <Input
-              id="shortcode"
-              value={shortcode}
-              onChange={(e) => setShortcode(e.target.value)}
-              placeholder="174379"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="type">Account type</Label>
-            <Select
-              value={accountType}
-              onValueChange={(value) => setAccountType(value as "paybill" | "till")}
-            >
-              <SelectTrigger id="type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="paybill">Paybill</SelectItem>
-                <SelectItem value="till">Till (Buy Goods)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="type">Account type</Label>
+          <Select
+            value={accountType}
+            onValueChange={(value) => setAccountType(value as "paybill" | "till")}
+          >
+            <SelectTrigger id="type">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="paybill">Paybill</SelectItem>
+              <SelectItem value="till">Till (Buy Goods)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="reference">Default account reference</Label>
+          <Label htmlFor="shortcode">
+            {accountType === "till" ? "Till number" : "Paybill number"}
+          </Label>
           <Input
-            id="reference"
-            value={reference}
-            onChange={(e) => setReference(e.target.value)}
-            placeholder="PayWave"
+            id="shortcode"
+            inputMode="numeric"
+            value={shortcode}
+            onChange={(e) => setShortcode(e.target.value.replace(/\D/g, ""))}
+            placeholder="174379"
           />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="passkey">Daraja passkey</Label>
-          <Input
-            id="passkey"
-            type="password"
-            value={passkey}
-            onChange={(e) => setPasskey(e.target.value)}
-            placeholder={settings.data ? "Leave blank to keep current" : ""}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="callback">Callback URL</Label>
-          <Input
-            id="callback"
-            value={callbackUrl}
-            onChange={(e) => setCallbackUrl(e.target.value)}
-            placeholder="https://your-app.lovable.app/api/public/stk/callback"
-          />
-          <p className="text-xs text-muted-foreground">
-            Leave blank to use PayWave's built-in callback handler.
-          </p>
         </div>
 
         <Button type="submit" disabled={mutation.isPending}>
