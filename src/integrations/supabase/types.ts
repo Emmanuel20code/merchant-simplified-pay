@@ -14,7 +14,161 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      api_keys: {
+        Row: {
+          created_at: string
+          id: string
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          revoked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      merchant_settings: {
+        Row: {
+          account_reference: string | null
+          account_type: string
+          callback_url: string | null
+          created_at: string
+          passkey: string | null
+          shortcode: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_reference?: string | null
+          account_type?: string
+          callback_url?: string | null
+          created_at?: string
+          passkey?: string | null
+          shortcode?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_reference?: string | null
+          account_type?: string
+          callback_url?: string | null
+          created_at?: string
+          passkey?: string | null
+          shortcode?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          business_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          business_name?: string | null
+          created_at?: string
+          email?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          business_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          account_reference: string | null
+          amount: number
+          api_key_id: string | null
+          checkout_request_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          merchant_request_id: string | null
+          mpesa_receipt: string | null
+          phone: string
+          result_code: string | null
+          result_desc: string | null
+          shortcode: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_reference?: string | null
+          amount: number
+          api_key_id?: string | null
+          checkout_request_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          merchant_request_id?: string | null
+          mpesa_receipt?: string | null
+          phone: string
+          result_code?: string | null
+          result_desc?: string | null
+          shortcode?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_reference?: string | null
+          amount?: number
+          api_key_id?: string | null
+          checkout_request_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          merchant_request_id?: string | null
+          mpesa_receipt?: string | null
+          phone?: string
+          result_code?: string | null
+          result_desc?: string | null
+          shortcode?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
