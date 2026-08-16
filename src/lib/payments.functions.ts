@@ -9,7 +9,7 @@ export const getMerchantSettings = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("merchant_settings")
-      .select("user_id, shortcode, account_type, account_reference, callback_url")
+      .select("user_id, shortcode, account_type")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -23,24 +23,15 @@ export const saveMerchantSettings = createServerFn({ method: "POST" })
       .object({
         shortcode: z.string().trim().max(12).optional(),
         account_type: z.enum(["paybill", "till"]),
-        account_reference: z.string().trim().max(64).optional(),
-        callback_url: z.string().trim().max(300).optional(),
-        passkey: z.string().trim().max(200).optional(),
       })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const payload: Record<string, string | null> = {
+    const { error } = await context.supabase.from("merchant_settings").upsert({
+      user_id: context.userId,
       shortcode: data.shortcode || null,
       account_type: data.account_type,
-      account_reference: data.account_reference || null,
-      callback_url: data.callback_url || null,
-    };
-    if (data.passkey) payload["passkey"] = data.passkey;
-
-    const { error } = await context.supabase
-      .from("merchant_settings")
-      .upsert({ user_id: context.userId, ...payload });
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
