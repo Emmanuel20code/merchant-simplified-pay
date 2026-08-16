@@ -57,17 +57,26 @@ export async function runStkPush(
     .eq("user_id", userId)
     .maybeSingle();
 
+  // The merchant must have registered their own till / paybill number: that is
+  // where the money settles (PartyB). The platform (super admin) credentials are
+  // always the initiator of the request.
+  const merchantShortcode = settings?.shortcode?.trim();
+  if (!merchantShortcode) {
+    throw new Error(
+      "No till or paybill number configured for this merchant account. Add it in Merchant settings first.",
+    );
+  }
+  const accountType = settings?.account_type === "till" ? "till" : "paybill";
+
   const master = await loadMasterCredentials();
   const config = getDarajaConfig(master);
-  const shortcode = settings?.shortcode || config.shortcode;
-  const passkey = settings?.passkey || config.passkey;
-  const accountReference =
-    input.accountReference || settings?.account_reference || "PayWave";
+  // Initiator = platform shortcode + passkey from the super admin console.
+  const initiatorShortcode = config.shortcode;
+  const initiatorPasskey = config.passkey;
+  const accountReference = input.accountReference || merchantShortcode;
   const description = input.description || "Payment";
   const callbackUrl =
-    settings?.callback_url ||
-    master?.default_callback_url ||
-    `${origin}/api/public/stk/callback`;
+    master?.default_callback_url || `${origin}/api/public/stk/callback`;
 
   const { data: tx, error: txError } = await supabaseAdmin
     .from("transactions")
@@ -78,7 +87,7 @@ export async function runStkPush(
       amount: input.amount,
       account_reference: accountReference,
       description,
-      shortcode,
+      shortcode: merchantShortcode,
       status: "pending",
     })
     .select()
@@ -89,9 +98,10 @@ export async function runStkPush(
     const result = await initiateStkPush(config, {
       phone,
       amount: input.amount,
-      shortcode,
-      passkey,
-      accountType: settings?.account_type ?? "paybill",
+      shortcode: initiatorShortcode,
+      passkey: initiatorPasskey,
+      partyB: merchantShortcode,
+      accountType,
       accountReference,
       description,
       callbackUrl,
