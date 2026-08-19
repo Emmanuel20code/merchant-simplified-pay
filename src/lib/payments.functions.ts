@@ -9,7 +9,7 @@ export const getMerchantSettings = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("merchant_settings")
-      .select("user_id, shortcode, account_type")
+      .select("user_id, shortcode, account_type, webhook_url, webhook_secret")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -23,6 +23,13 @@ export const saveMerchantSettings = createServerFn({ method: "POST" })
       .object({
         shortcode: z.string().trim().max(12).optional(),
         account_type: z.enum(["paybill", "till"]),
+        webhook_url: z
+          .string()
+          .trim()
+          .url()
+          .refine((value) => value.startsWith("https://"), "Webhook URL must use https")
+          .optional()
+          .or(z.literal("")),
       })
       .parse(data),
   )
@@ -31,9 +38,35 @@ export const saveMerchantSettings = createServerFn({ method: "POST" })
       user_id: context.userId,
       shortcode: data.shortcode || null,
       account_type: data.account_type,
+      webhook_url: data.webhook_url || null,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const rotateWebhookSecret = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { generateWebhookSecret } = await import("./webhooks.server");
+    const secret = generateWebhookSecret();
+    const { error } = await context.supabase
+      .from("merchant_settings")
+      .upsert({ user_id: context.userId, webhook_secret: secret });
+    if (error) throw new Error(error.message);
+    return { secret };
+  });
+
+export const listWebhookDeliveries = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("webhook_deliveries")
+      .select("id, event, url, status, attempts, response_status, error, created_at")
+      .eq("user_id", context.userId)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw new Error(error.message);
+    return data ?? [];
   });
 
 export const listApiKeys = createServerFn({ method: "GET" })

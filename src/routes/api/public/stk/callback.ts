@@ -31,7 +31,7 @@ export const Route = createFileRoute("/api/public/stk/callback")({
         const succeeded = callback.ResultCode === 0;
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        await supabaseAdmin
+        const { data: updated } = await supabaseAdmin
           .from("transactions")
           .update({
             status: succeeded ? "success" : callback.ResultCode === 1032 ? "cancelled" : "failed",
@@ -39,7 +39,19 @@ export const Route = createFileRoute("/api/public/stk/callback")({
             result_desc: callback.ResultDesc ?? null,
             mpesa_receipt: receipt ? String(receipt) : null,
           })
-          .eq("checkout_request_id", callback.CheckoutRequestID);
+          .eq("checkout_request_id", callback.CheckoutRequestID)
+          .select("*")
+          .maybeSingle();
+
+        // Notify the merchant's own webhook endpoint about the final outcome.
+        if (updated) {
+          const { deliverPaymentWebhook } = await import("@/lib/webhooks.server");
+          try {
+            await deliverPaymentWebhook(updated);
+          } catch (error) {
+            console.error("Merchant webhook delivery failed:", error);
+          }
+        }
 
         return new Response(JSON.stringify({ ResultCode: 0, ResultDesc: "Accepted" }), {
           headers: { "Content-Type": "application/json" },
