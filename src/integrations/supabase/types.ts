@@ -57,6 +57,8 @@ export type Database = {
           shortcode: string | null
           updated_at: string
           user_id: string
+          webhook_secret: string | null
+          webhook_url: string | null
         }
         Insert: {
           account_reference?: string | null
@@ -67,6 +69,8 @@ export type Database = {
           shortcode?: string | null
           updated_at?: string
           user_id: string
+          webhook_secret?: string | null
+          webhook_url?: string | null
         }
         Update: {
           account_reference?: string | null
@@ -77,6 +81,8 @@ export type Database = {
           shortcode?: string | null
           updated_at?: string
           user_id?: string
+          webhook_secret?: string | null
+          webhook_url?: string | null
         }
         Relationships: []
       }
@@ -228,6 +234,62 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      webhook_deliveries: {
+        Row: {
+          attempts: number
+          created_at: string
+          delivered_at: string | null
+          error: string | null
+          event: string
+          id: string
+          payload: Json
+          response_status: number | null
+          status: string
+          transaction_id: string | null
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          delivered_at?: string | null
+          error?: string | null
+          event: string
+          id?: string
+          payload: Json
+          response_status?: number | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          delivered_at?: string | null
+          error?: string | null
+          event?: string
+          id?: string
+          payload?: Json
+          response_status?: number | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_deliveries_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
