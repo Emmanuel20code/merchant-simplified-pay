@@ -52,12 +52,12 @@ function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
             data: { business_name: businessName },
           },
         });
         if (error) throw error;
-        toast.success("Account created. Check your inbox to confirm your email.");
+        toast.success("Account created. You're signed in.");
+        navigate({ to: "/dashboard" });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;

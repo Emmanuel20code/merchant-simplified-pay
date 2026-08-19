@@ -65,11 +65,10 @@ function AdminLogin() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/admin-login` },
         });
         if (error) throw error;
         if (!data.session) {
-          toast.success("Account created. Confirm your email, then sign in here.");
+          toast.success("Account created. Sign in here.");
           setMode("signin");
           return;
         }
